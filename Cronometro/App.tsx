@@ -5,23 +5,25 @@ export default function App() {
   const [time, setTime] = useState(0);
   const [timer, setTimer] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
-  const [btnText, setBtnText] = useState('VAI');
   const [ultimoTempo, setUltimoTempo] = useState(0);
+  const [tempoMarcado, setTempoMarcado] = useState(0);
 
   const vai = () => {
-    if (running && timer) {
-      clearInterval(timer);
-      setTimer(null);
-	  setBtnText('VAI');
-    } else {
-      const id = setInterval(() => {
-        setTime(t => t + 0.1);
-      }, 100);
-      setTimer(id);
-	  setBtnText('PARAR');
+    if (running) {
+      if (timer) {
+        clearInterval(timer);
+        setTimer(null);
+      }
+      setRunning(false);
+      return;
     }
 
-    setRunning(!running);
+    const id = setInterval(() => {
+      setTime(t => t + 0.1);
+    }, 100);
+
+    setTimer(id);
+    setRunning(true);
   };
 
   const limpar = () => {
@@ -30,28 +32,58 @@ export default function App() {
       setTimer(null);
     }
 
+    setUltimoTempo(time);
     setTime(0);
+    setTempoMarcado(0);
     setRunning(false);
-	setUltimoTempo(time);
-	setBtnText('VAI');
   };
+
+  const formatarTempo = (tempo: number) => {
+    return tempo.toFixed(1);
+  };
+
+  const marcarTempo = () => {
+    setTempoMarcado(time);
+  };
+
+  const renderTextoTempo = (strView: string, tempo: number) => {
+    if (tempo <= 0) return null;
+	
+	return (
+      <Text style={styles.ultimoTempo}>
+        {tempo > 0 ? `${strView}: ${formatarTempo(tempo)}s` : ''}
+      </Text>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Image source={require('./src/cronometro.png')} />
 
-      <Text style={styles.timer}>{time.toFixed(1)}</Text>
+      <Text style={styles.timer}>{formatarTempo(time)}</Text>
 
       <View style={styles.btnArea}>
         <TouchableOpacity style={styles.btn} onPress={vai}>
-          <Text style={styles.btnTexto}>{btnText}</Text>
+          <Text style={styles.btnTexto}>{running ? 'PARAR' : 'VAI'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btn} onPress={limpar}>
-          <Text style={styles.btnTexto}>LIMPAR</Text>
-        </TouchableOpacity>
+        {time > 0 && (
+          <TouchableOpacity style={styles.btn} onPress={limpar}>
+            <Text style={styles.btnTexto}>LIMPAR</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-	  <Text style={styles.ultimoTempo}>{ultimoTempo > 0 ? `Último tempo: ${ultimoTempo.toFixed(1)}s` : ''}</Text>
+      <View style={styles.btnAreaMarcar}>
+        {time > 0 && (
+          <TouchableOpacity style={styles.btn} onPress={marcarTempo}>
+            <Text style={styles.btnTexto}>Marcar</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {renderTextoTempo('Último tempo', ultimoTempo)}
+      {renderTextoTempo('Tempo marcado', tempoMarcado)}
     </View>
   );
 }
@@ -89,9 +121,14 @@ const styles = StyleSheet.create({
     color: '#00aeef',
   },
   ultimoTempo: {
-	marginTop: 40,
-	fontSize: 25,
-	color: '#fff',
-	fontStyle: 'italic'
+    marginTop: 40,
+    fontSize: 25,
+    color: '#fff',
+    fontStyle: 'italic',
+  },
+  btnAreaMarcar: {
+    flexDirection: 'row',
+    marginTop: 20,
+    height: 40,
   },
 });
